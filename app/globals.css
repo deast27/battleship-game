@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .grid-cell {
+    @apply w-8 h-8 border border-ocean-300 flex items-center justify-center text-xs font-bold cursor-pointer transition-all duration-200;
+  }
+  
+  .grid-cell-empty {
+    @apply grid-cell bg-ocean-100 hover:bg-ocean-200;
+  }
+  
+  .grid-cell-ship {
+    @apply grid-cell bg-ship-gray hover:bg-gray-600;
+  }
+  
+  .grid-cell-hit {
+    @apply grid-cell bg-ship-hit text-white animate-pulse;
+  }
+  
+  .grid-cell-miss {
+    @apply grid-cell bg-ship-miss;
+  }
+  
+  .grid-cell-sunk {
+    @apply grid-cell bg-red-600 text-white;
+  }
+}
+
+@layer utilities {
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .glass-effect {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+}
