@@ -3,6 +3,7 @@
 import React from 'react';
 import { Player, Position } from '@/types';
 import { getRemainingShips } from '@/lib/gameLogic';
+import Grid from './Grid';
 
 interface BattlePhaseProps {
   player: Player;
@@ -90,10 +91,11 @@ const BattlePhase: React.FC<BattlePhaseProps> = ({
           </h3>
           <div className="flex justify-center">
             <div className="relative">
-              {/* This will be replaced with the actual Grid component */}
-              <div className="w-80 h-80 bg-ocean-100 rounded-lg border-2 border-ocean-300 flex items-center justify-center">
-                <span className="text-ocean-600">Player Grid</span>
-              </div>
+              <Grid
+                grid={player.grid}
+                showShips={true}
+                isOpponent={false}
+              />
             </div>
           </div>
           <div className="mt-4 text-center">
@@ -110,10 +112,12 @@ const BattlePhase: React.FC<BattlePhaseProps> = ({
           </h3>
           <div className="flex justify-center">
             <div className="relative">
-              {/* This will be replaced with the actual Grid component */}
-              <div className="w-80 h-80 bg-ocean-100 rounded-lg border-2 border-ocean-300 flex items-center justify-center cursor-pointer hover:bg-ocean-200 transition-colors">
-                <span className="text-ocean-600">AI Grid (Click to Fire)</span>
-              </div>
+              <Grid
+                grid={ai.grid}
+                showShips={false}
+                isOpponent={true}
+                onCellClick={currentPlayer === 'player' ? onPlayerShot : undefined}
+              />
             </div>
           </div>
           <div className="mt-4 text-center">
