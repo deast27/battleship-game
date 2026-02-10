@@ -47,15 +47,15 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
   const allShipsPlaced = ships.length === SHIP_CONFIGS.length;
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
-      <h2 className="text-2xl font-bold text-ocean-800 mb-6 text-center">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
+      <h2 className="text-2xl font-bold text-ocean-800 dark:text-ocean-200 mb-6 text-center">
         Place Your Ships
       </h2>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Ship Selection Panel */}
         <div>
-          <h3 className="text-lg font-semibold text-ocean-700 mb-4">
+          <h3 className="text-lg font-semibold text-ocean-700 dark:text-ocean-300 mb-4">
             Select Ship to Place
           </h3>
           
@@ -67,10 +67,10 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
                 disabled={isShipPlaced(config.type)}
                 className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all ${
                   isShipPlaced(config.type)
-                    ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed'
+                    ? 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                     : selectedShip === config.type
                     ? 'bg-ocean-500 border-ocean-600 text-white'
-                    : 'bg-white border-ocean-300 text-ocean-700 hover:bg-ocean-50'
+                    : 'bg-white dark:bg-gray-700 border-ocean-300 dark:border-ocean-600 text-ocean-700 dark:text-ocean-300 hover:bg-ocean-50 dark:hover:bg-gray-600'
                 }`}
               >
                 <div className="flex justify-between items-center">
@@ -86,7 +86,7 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
           {/* Orientation Toggle */}
           <div className="mb-6">
             <label className="flex items-center space-x-3 cursor-pointer">
-              <span className="text-ocean-700 font-medium">Orientation:</span>
+              <span className="text-ocean-700 dark:text-ocean-300 font-medium">Orientation:</span>
               <button
                 onClick={onOrientationToggle}
                 className="px-4 py-2 bg-ocean-500 text-white rounded-lg hover:bg-ocean-600 transition-colors"
@@ -107,7 +107,7 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
             
             <button
               onClick={onReset}
-              className="w-full px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+              className="w-full px-4 py-3 bg-gray-500 dark:bg-gray-600 text-white rounded-lg hover:bg-gray-600 dark:hover:bg-gray-700 transition-colors font-medium"
             >
               🔄 Reset Board
             </button>
@@ -118,7 +118,7 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
               className={`w-full px-4 py-3 rounded-lg font-medium transition-colors ${
                 allShipsPlaced
                   ? 'bg-green-500 text-white hover:bg-green-600'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
               }`}
             >
               ⚔️ Start Battle
@@ -128,10 +128,10 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
 
         {/* Instructions */}
         <div>
-          <h3 className="text-lg font-semibold text-ocean-700 mb-4">
+          <h3 className="text-lg font-semibold text-ocean-700 dark:text-ocean-300 mb-4">
             How to Play
           </h3>
-          <div className="bg-ocean-50 rounded-lg p-4 space-y-3 text-sm text-ocean-700">
+          <div className="bg-ocean-50 dark:bg-gray-700 rounded-lg p-4 space-y-3 text-sm text-ocean-700 dark:text-ocean-300">
             <p>• <strong>Select a ship</strong> from the left panel</p>
             <p>• <strong>Choose orientation</strong> (horizontal or vertical)</p>
             <p>• <strong>Click on the grid</strong> to place your ship</p>
@@ -141,12 +141,12 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
           </div>
 
           <div className="mt-6">
-            <h4 className="font-semibold text-ocean-700 mb-2">Fleet Status</h4>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-sm text-gray-700">
+            <h4 className="font-semibold text-ocean-700 dark:text-ocean-300 mb-2">Fleet Status</h4>
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
                 Ships placed: {ships.length} / {SHIP_CONFIGS.length}
               </p>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+              <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 mt-2">
                 <div 
                   className="bg-ocean-500 h-2 rounded-full transition-all"
                   style={{ width: `${(ships.length / SHIP_CONFIGS.length) * 100}%` }}

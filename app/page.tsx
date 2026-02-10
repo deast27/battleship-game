@@ -16,6 +16,7 @@ import { AIPlayer } from '@/lib/aiLogic';
 import ShipPlacement from '@/components/ShipPlacement';
 import BattlePhase from '@/components/BattlePhase';
 import Grid from '@/components/Grid';
+import DarkModeToggle from '@/components/DarkModeToggle';
 
 const BattleshipGame: React.FC = () => {
   const initializeGameState = (): GameState => ({
@@ -45,6 +46,19 @@ const BattleshipGame: React.FC = () => {
 
   const [gameState, setGameState] = useState<GameState>(initializeGameState);
   const [aiPlayer] = useState(() => new AIPlayer());
+  const [lastShotResult, setLastShotResult] = useState<'hit' | 'miss' | null>(null);
+  const [lastShotPosition, setLastShotPosition] = useState<Position | null>(null);
+
+  // Auto-trigger AI turn when it's AI's turn
+  useEffect(() => {
+    if (gameState.phase === 'battle' && gameState.currentPlayer === 'ai' && !gameState.winner) {
+      const timer = setTimeout(() => {
+        handleAITurn();
+      }, 1500); // Give AI thinking time
+      
+      return () => clearTimeout(timer);
+    }
+  }, [gameState.currentPlayer, gameState.phase, gameState.winner]);
 
   // Handle ship selection
   const handleShipSelect = (shipType: ShipType) => {
@@ -110,12 +124,18 @@ const BattleshipGame: React.FC = () => {
   const handleReset = () => {
     setGameState(initializeGameState());
     aiPlayer.reset();
+    setLastShotResult(null);
+    setLastShotPosition(null);
   };
 
   // Start battle phase
   const handleStartGame = () => {
     // Place AI ships randomly
     const { grid: aiGrid, ships: aiShips } = placeShipsRandomly(createEmptyGrid(), SHIP_CONFIGS);
+    
+    // Clear any previous shot results
+    setLastShotResult(null);
+    setLastShotPosition(null);
     
     setGameState(prev => ({
       ...prev,
@@ -134,6 +154,10 @@ const BattleshipGame: React.FC = () => {
 
     const { ai } = gameState;
     const { hit, sunkShip } = processShot(ai, position);
+
+    // Set shot result and position for display
+    setLastShotResult(hit ? 'hit' : 'miss');
+    setLastShotPosition(position);
 
     const newGameState = {
       ...gameState,
@@ -154,15 +178,7 @@ const BattleshipGame: React.FC = () => {
 
     setGameState(newGameState);
 
-    // Trigger AI turn after a delay
-    if (!hit && !newGameState.winner) {
-      setTimeout(() => handleAITurn(), 1000);
-    } else if (hit && !newGameState.winner) {
-      // Player gets another turn on hit
-      setTimeout(() => {
-        // AI will respond after player's next shot
-      }, 500);
-    }
+    // AI turn will be triggered automatically by useEffect when currentPlayer is 'ai'
   };
 
   // AI turn
@@ -172,6 +188,10 @@ const BattleshipGame: React.FC = () => {
     const { player, ai } = gameState;
     const shotPosition = aiPlayer.getNextShot(ai, player);
     const { hit, sunkShip } = processShot(player, shotPosition);
+
+    // Set shot result and position for display
+    setLastShotResult(hit ? 'hit' : 'miss');
+    setLastShotPosition(shotPosition);
 
     aiPlayer.processShotResult(hit, shotPosition);
 
@@ -199,11 +219,14 @@ const BattleshipGame: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ocean-50 to-ocean-100 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-ocean-50 to-ocean-100 dark:from-gray-900 dark:to-gray-800 py-8">
       <div className="container mx-auto px-4">
-        <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-ocean-800 mb-2">⚓ Battleship</h1>
-          <p className="text-ocean-600">Classic Naval Combat Game</p>
+        <header className="text-center mb-8 relative">
+          <div className="absolute top-0 right-0">
+            <DarkModeToggle />
+          </div>
+          <h1 className="text-4xl font-bold text-ocean-800 dark:text-ocean-200 mb-2">⚓ Battleship</h1>
+          <p className="text-ocean-600 dark:text-ocean-300">Classic Naval Combat Game</p>
         </header>
 
         <main>
@@ -247,6 +270,8 @@ const BattleshipGame: React.FC = () => {
               onPlayerShot={handlePlayerShot}
               onNewGame={handleNewGame}
               winner={gameState.winner}
+              lastShotResult={lastShotResult}
+              lastShotPosition={lastShotPosition}
             />
           )}
 
@@ -258,6 +283,8 @@ const BattleshipGame: React.FC = () => {
               onPlayerShot={handlePlayerShot}
               onNewGame={handleNewGame}
               winner={gameState.winner}
+              lastShotResult={lastShotResult}
+              lastShotPosition={lastShotPosition}
             />
           )}
         </main>

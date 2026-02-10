@@ -8,22 +8,23 @@ export class AIPlayer {
   private attemptedShots: Set<string> = new Set();
 
   getNextShot(aiPlayer: Player, opponentPlayer: Player): Position {
-    // Get available positions from opponent's grid (where we're shooting)
-    const availablePositions = getRandomEmptyPositions(opponentPlayer.grid, 100)
-      .filter(pos => !this.attemptedShots.has(positionToKey(pos)));
-
-    if (availablePositions.length === 0) {
-      // Fallback to any empty position on opponent's grid
-      for (let row = 0; row < GRID_SIZE; row++) {
-        for (let col = 0; col < GRID_SIZE; col++) {
-          const pos = { row, col };
-          const cellKey = positionToKey(pos);
-          if (opponentPlayer.grid[cellKey] === 'empty' && 
-              !this.attemptedShots.has(cellKey)) {
-            return pos;
-          }
+    // Get all valid positions that haven't been attacked yet
+    const allValidPositions: Position[] = [];
+    
+    for (let row = 0; row < GRID_SIZE; row++) {
+      for (let col = 0; col < GRID_SIZE; col++) {
+        const pos = { row, col };
+        const cellKey = positionToKey(pos);
+        // AI can target any cell that hasn't been attacked yet (ship, empty, etc.)
+        if (!this.attemptedShots.has(cellKey)) {
+          allValidPositions.push(pos);
         }
       }
+    }
+
+    if (allValidPositions.length === 0) {
+      // This should never happen, but fallback to a random position
+      return { row: Math.floor(Math.random() * GRID_SIZE), col: Math.floor(Math.random() * GRID_SIZE) };
     }
 
     // Hunt mode: target adjacent cells after a hit
@@ -35,14 +36,15 @@ export class AIPlayer {
       );
 
       if (validTargets.length > 0) {
-        return validTargets[Math.floor(Math.random() * validTargets.length)];
+        const selectedTarget = validTargets[Math.floor(Math.random() * validTargets.length)];
+        return selectedTarget;
       }
       // If no valid adjacent targets, fall through to random shot
     }
 
-    // Random shot from available positions
-    const randomPos = availablePositions[Math.floor(Math.random() * availablePositions.length)];
-    return randomPos || availablePositions[0]; // Fallback
+    // Random shot from all valid positions
+    const randomPos = allValidPositions[Math.floor(Math.random() * allValidPositions.length)];
+    return randomPos || allValidPositions[0]; // Fallback
   }
 
   processShotResult(hit: boolean, position: Position): void {

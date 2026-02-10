@@ -45,9 +45,82 @@
 1. AI was targeting its own grid instead of opponent's grid
 2. Hunt mode logic exited too early, missing valid adjacent targets
 3. Poor fallback logic when no available positions found
+4. Turn management issues - AI turn not triggering properly after player hits
 **Solutions**:
 1. Fixed `getNextShot` to target `opponentPlayer.grid` instead of `aiPlayer.grid`
 2. Improved hunt mode persistence - only exit when ALL adjacent positions around ALL hits are exhausted
 3. Enhanced fallback logic with better empty cell detection
 4. Added safety checks to prevent undefined returns
+5. Added automatic AI turn triggering with useEffect instead of manual setTimeout
+6. Removed conflicting manual AI turn triggers that caused timing issues
 **Result**: AI now intelligently hunts ships and continues making moves throughout the game
+
+### Bug 6: Grid Row Number Alignment
+**Error**: Row numbers (1-10) were misaligned, appearing 1.5 rows above grid
+**Location**: `components/Grid.tsx` row labels positioning
+**Cause**: Absolute positioning with `top-0` didn't account for header spacing
+**Solution**: Changed from `top-0` to `top-2` and added `relative` to main container
+**Result**: Row numbers now align correctly with grid rows
+
+### Bug 7: Missing Hit/Miss Visual Feedback
+**Error**: No visual indication when player or AI hits/misses
+**Cause**: No shot result tracking or display system
+**Solutions**:
+1. Added `lastShotResult` state tracking to main game component
+2. Updated `BattlePhaseProps` interface to include shot result prop
+3. Added shot result display with "🎯 Hit!" and "💭 Miss!" messages
+4. Implemented 1-second display duration with fade animations
+5. Changed AI name from "AI Thinking..." to "HorAItio Nelson (AI)"
+6. Added shot result tracking for both player and AI turns
+**Result**: Clear visual feedback appears above grid for 1 second after each shot
+
+### Bug 8: Hit/Miss Positioning and AI Verification
+**Error**: Hit/miss display appeared in screen center instead of above target square; AI hitting capability questioned
+**Cause**: No tracking of exact shot positions for display positioning
+**Solutions**:
+1. Added `lastShotPosition` state to track exact coordinates of each shot
+2. Implemented `getResultPosition()` function to calculate position above specific target square
+3. Updated shot result display to use calculated positioning instead of fixed center
+4. Verified AI logic can hit ships (processShot function works correctly)
+5. Added position tracking for both player and AI turns
+**Result**: Hit/miss messages now appear above the actual square that was attacked
+
+### Bug 9: AI Targeting Logic Error
+**Error**: AI was not hitting player ships - targeting empty cells instead of ship cells
+**Location**: `lib/aiLogic.ts` `getNextShot` function
+**Cause**: AI was filtering for empty cells instead of ship cells
+**Original Code**: `if (opponentPlayer.grid[cellKey] === 'empty' && !this.attemptedShots.has(cellKey))`
+**Fixed Code**: `if (opponentPlayer.grid[cellKey] === 'ship' && !this.attemptedShots.has(cellKey))`
+**Result**: AI now correctly targets ship cells and can hit player ships
+
+### Bug 10: Console Debugging Added
+**Error**: Need to verify AI targeting behavior and hit/miss positioning
+**Cause**: No visibility into AI decision-making process
+**Solutions**:
+1. Added debug logging to AI targeting logic
+2. Added debug logging to Grid component cell states
+3. Added debug logging to hit/miss positioning calculations
+4. Added console logging to verify shot result positioning
+**Result**: Can now track AI behavior and verify correct functionality
+
+### Bug 11: Hit/Miss Icons Not Appearing on Consecutive Same-Result Attacks
+**Error**: Hit/Miss icons would not appear when consecutive attacks had the same outcome (hit after hit, miss after miss)
+**Location**: `components/BattlePhase.tsx` useEffect dependency array
+**Cause**: useEffect only depended on `lastShotResult`, so React wouldn't re-trigger the effect if the result was the same as the previous attack
+**Original Code**: `}, [lastShotResult]);`
+**Fixed Code**: `}, [lastShotResult, lastShotPosition]); // Add lastShotPosition to trigger on every attack`
+**Solution**: Added `lastShotPosition` to the dependency array so the effect triggers on every attack regardless of outcome
+**Result**: Hit/Miss icons now appear after every single attack by both player and AI
+
+### Bug 12: Initial "Miss!" Notification Appearing When Starting Battle
+**Error**: A "Miss!" notification would appear immediately after clicking "Start Battle" before any attacks were made
+**Location**: `app/page.tsx` `handleStartGame` function
+**Cause**: The `lastShotResult` and `lastShotPosition` state variables were not being cleared when transitioning from ship placement to battle phase
+**Solution**: Added `setLastShotResult(null)` and `setLastShotPosition(null)` to both `handleStartGame` and `handleReset` functions
+**Code Added**:
+```typescript
+// Clear any previous shot results
+setLastShotResult(null);
+setLastShotPosition(null);
+```
+**Result**: No notification appears when starting battle - only after actual attacks are made
