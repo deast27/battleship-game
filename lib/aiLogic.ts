@@ -1,4 +1,4 @@
-import { Position, Player } from '@/types';
+import { Position, Player, Ship } from '@/types';
 import { positionToKey, isValidPosition, getRandomEmptyPositions, GRID_SIZE } from './gameLogic';
 
 export class AIPlayer {
@@ -6,6 +6,7 @@ export class AIPlayer {
   private huntMode: boolean = false;
   private lastHit: Position | null = null;
   private attemptedShots: Set<string> = new Set();
+  private currentShipHits: Position[] = []; // Track hits on current ship being hunted
 
   getNextShot(aiPlayer: Player, opponentPlayer: Player): Position {
     // Get all valid positions that haven't been attacked yet
@@ -27,19 +28,35 @@ export class AIPlayer {
       return { row: Math.floor(Math.random() * GRID_SIZE), col: Math.floor(Math.random() * GRID_SIZE) };
     }
 
-    // Hunt mode: target adjacent cells after a hit
-    if (this.huntMode && this.lastHit) {
-      const adjacentPositions = this.getAdjacentPositions(this.lastHit);
-      const validTargets = adjacentPositions.filter(pos => 
-        isValidPosition(pos) && 
-        !this.attemptedShots.has(positionToKey(pos))
+    // Hunt mode: focus on eliminating the current ship before moving on
+    if (this.huntMode && this.currentShipHits.length > 0) {
+      // First, try to finish off the current ship by targeting adjacent cells to any hit
+      const allAdjacentTargets: Position[] = [];
+      
+      for (const hitPosition of this.currentShipHits) {
+        const adjacentPositions = this.getAdjacentPositions(hitPosition);
+        const validTargets = adjacentPositions.filter(pos => 
+          isValidPosition(pos) && 
+          !this.attemptedShots.has(positionToKey(pos))
+        );
+        allAdjacentTargets.push(...validTargets);
+      }
+
+      // Remove duplicates
+      const uniqueTargets = allAdjacentTargets.filter((pos, index, self) => 
+        index === self.findIndex(p => positionToKey(p) === positionToKey(pos))
       );
 
-      if (validTargets.length > 0) {
-        const selectedTarget = validTargets[Math.floor(Math.random() * validTargets.length)];
-        return selectedTarget;
+      if (uniqueTargets.length > 0) {
+        // Prioritize targets that are most likely to hit the ship (pattern-based)
+        const prioritizedTargets = this.prioritizeTargets(uniqueTargets, this.currentShipHits);
+        return prioritizedTargets[0];
       }
-      // If no valid adjacent targets, fall through to random shot
+      
+      // If no adjacent targets, the ship might be sunk, so clear current ship tracking
+      this.currentShipHits = [];
+      this.huntMode = false;
+      this.lastHit = null;
     }
 
     // Random shot from all valid positions
@@ -47,20 +64,29 @@ export class AIPlayer {
     return randomPos || allValidPositions[0]; // Fallback
   }
 
-  processShotResult(hit: boolean, position: Position): void {
+  processShotResult(hit: boolean, position: Position, opponentPlayer: Player, sunkShip: Ship | null): void {
     this.attemptedShots.add(positionToKey(position));
 
     if (hit) {
       this.huntMode = true;
       this.lastHit = position;
       this.targets.push(position);
+      this.currentShipHits.push(position); // Add to current ship being hunted
+      
+      // Check if this hit sunk a ship
+      if (sunkShip) {
+        // Ship was sunk, clear current ship tracking and return to standard selection
+        this.currentShipHits = [];
+        this.huntMode = false;
+        this.lastHit = null;
+      }
     } else {
-      // Only exit hunt mode if we've exhausted all adjacent positions around ALL recent hits
+      // Only exit hunt mode if we've exhausted all adjacent positions around current ship hits
       if (this.huntMode) {
-        // Check if there are any valid adjacent positions around any of our hit targets
+        // Check if there are any valid adjacent positions around current ship hits
         let hasValidAdjacent = false;
-        for (const target of this.targets) {
-          const adjacentPositions = this.getAdjacentPositions(target);
+        for (const hitPosition of this.currentShipHits) {
+          const adjacentPositions = this.getAdjacentPositions(hitPosition);
           const validTargets = adjacentPositions.filter(pos => 
             isValidPosition(pos) && 
             !this.attemptedShots.has(positionToKey(pos))
@@ -71,13 +97,42 @@ export class AIPlayer {
           }
         }
         
-        // Only exit hunt mode if no valid targets around any hit
+        // Only exit hunt mode if no valid targets around current ship
         if (!hasValidAdjacent) {
+          this.currentShipHits = []; // Clear current ship tracking
           this.huntMode = false;
           this.lastHit = null;
         }
       }
     }
+  }
+
+  private prioritizeTargets(targets: Position[], hitPositions: Position[]): Position[] {
+    // Group targets by direction from hits to find the most promising pattern
+    const targetScores = targets.map(target => {
+      let score = 0;
+      
+      // Score based on how many hits this target is adjacent to
+      for (const hit of hitPositions) {
+        const distance = Math.abs(target.row - hit.row) + Math.abs(target.col - hit.col);
+        if (distance === 1) score += 3; // Directly adjacent
+        else if (distance === 2) score += 1; // Two cells away
+      }
+      
+      // Bonus for targets that continue a pattern (horizontal/vertical line)
+      const horizontalHits = hitPositions.filter(h => h.row === target.row).length;
+      const verticalHits = hitPositions.filter(h => h.col === target.col).length;
+      
+      if (horizontalHits >= 1) score += horizontalHits * 2;
+      if (verticalHits >= 1) score += verticalHits * 2;
+      
+      return { target, score };
+    });
+    
+    // Sort by score (highest first) and return just the positions
+    return targetScores
+      .sort((a, b) => b.score - a.score)
+      .map(item => item.target);
   }
 
   private getAdjacentPositions(position: Position): Position[] {
@@ -93,6 +148,7 @@ export class AIPlayer {
     this.targets = [];
     this.huntMode = false;
     this.lastHit = null;
+    this.currentShipHits = []; // Clear current ship tracking
     this.attemptedShots.clear();
   }
 }

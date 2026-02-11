@@ -14,6 +14,9 @@ interface BattlePhaseProps {
   winner: 'player' | 'ai' | null;
   lastShotResult: 'hit' | 'miss' | null;
   lastShotPosition: Position | null;
+  showFinalBoard?: boolean;
+  onToggleFinalBoard?: () => void;
+  isAIThinking?: boolean;
 }
 
 const BattlePhase: React.FC<BattlePhaseProps> = ({
@@ -24,7 +27,10 @@ const BattlePhase: React.FC<BattlePhaseProps> = ({
   onNewGame,
   winner,
   lastShotResult,
-  lastShotPosition
+  lastShotPosition,
+  showFinalBoard = false,
+  onToggleFinalBoard,
+  isAIThinking = false
 }) => {
   const [showResult, setShowResult] = useState(false);
 
@@ -74,22 +80,58 @@ const BattlePhase: React.FC<BattlePhaseProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          <div className="bg-green-50 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-green-800 mb-4">Your Fleet</h3>
-            <p className="text-2xl font-bold text-green-600">{playerShipsRemaining} ships remaining</p>
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-green-800 dark:text-green-300 mb-4">Your Fleet</h3>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{playerShipsRemaining} ships remaining</p>
           </div>
-          <div className="bg-red-50 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-red-800 mb-4">Enemy Fleet</h3>
-            <p className="text-2xl font-bold text-red-600">{aiShipsRemaining} ships remaining</p>
+          <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-red-800 dark:text-red-300 mb-4">Enemy Fleet</h3>
+            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{aiShipsRemaining} ships remaining</p>
           </div>
         </div>
 
-        <button
-          onClick={onNewGame}
-          className="px-8 py-4 bg-ocean-500 text-white rounded-lg hover:bg-ocean-600 transition-colors text-lg font-medium"
-        >
-          🔄 New Game
-        </button>
+        <div className="flex justify-center space-x-4 mb-6">
+          <button
+            onClick={onToggleFinalBoard}
+            className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-medium"
+          >
+            {showFinalBoard ? 'Hide Final Board' : 'View Final Board'}
+          </button>
+          <button
+            onClick={onNewGame}
+            className="px-8 py-4 bg-ocean-500 text-white rounded-lg hover:bg-ocean-600 transition-colors text-lg font-medium"
+          >
+            🔄 New Game
+          </button>
+        </div>
+
+        {showFinalBoard && (
+          <div className="mt-8 border-t pt-8">
+            <h3 className="text-2xl font-bold text-center text-ocean-800 dark:text-ocean-200 mb-6">Final Board Positions</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div>
+                <h4 className="text-lg font-semibold text-ocean-700 dark:text-ocean-300 mb-4 text-center">Your Fleet</h4>
+                <div className="flex justify-center">
+                  <Grid
+                    grid={player.grid}
+                    showShips={true}
+                    isOpponent={false}
+                  />
+                </div>
+              </div>
+              <div>
+                <h4 className="text-lg font-semibold text-ocean-700 dark:text-ocean-300 mb-4 text-center">AI Fleet</h4>
+                <div className="flex justify-center">
+                  <Grid
+                    grid={ai.grid}
+                    showShips={true}
+                    isOpponent={false}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -151,7 +193,7 @@ const BattlePhase: React.FC<BattlePhaseProps> = ({
                 grid={ai.grid}
                 showShips={false}
                 isOpponent={true}
-                onCellClick={currentPlayer === 'player' ? onPlayerShot : undefined}
+                onCellClick={currentPlayer === 'player' && !isAIThinking ? onPlayerShot : undefined}
               />
             </div>
           </div>

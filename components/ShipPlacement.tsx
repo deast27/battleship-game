@@ -13,6 +13,7 @@ interface ShipPlacementProps {
   onPlaceShip: (position: Position) => void;
   onRandomPlacement: () => void;
   onReset: () => void;
+  onRemoveShip: (shipType: ShipType) => void;
   onStartGame: () => void;
   grid: any; // Will be typed properly when dependencies are installed
 }
@@ -26,6 +27,7 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
   onPlaceShip,
   onRandomPlacement,
   onReset,
+  onRemoveShip,
   onStartGame,
   grid
 }) => {
@@ -63,11 +65,11 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
             {SHIP_CONFIGS.map(config => (
               <button
                 key={config.type}
-                onClick={() => onShipSelect(config.type)}
-                disabled={isShipPlaced(config.type)}
+                onClick={() => isShipPlaced(config.type) ? onRemoveShip(config.type) : onShipSelect(config.type)}
+                disabled={false}
                 className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all ${
                   isShipPlaced(config.type)
-                    ? 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                    ? 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900'
                     : selectedShip === config.type
                     ? 'bg-ocean-500 border-ocean-600 text-white'
                     : 'bg-white dark:bg-gray-700 border-ocean-300 dark:border-ocean-600 text-ocean-700 dark:text-ocean-300 hover:bg-ocean-50 dark:hover:bg-gray-600'
@@ -75,9 +77,20 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
               >
                 <div className="flex justify-between items-center">
                   <span>{getShipDisplayName(config.type)}</span>
-                  {isShipPlaced(config.type) && (
-                    <span className="text-green-600">✓ Placed</span>
-                  )}
+                  {isShipPlaced(config.type) ? (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-green-600 dark:text-green-400">✓ Placed</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRemoveShip(config.type);
+                        }}
+                        className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               </button>
             ))}

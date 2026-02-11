@@ -20,14 +20,8 @@
 4. Fixed import conflict in `Grid.tsx` using `type Grid` import
 **Result**: Build compiles successfully with no TypeScript errors
 
-### Bug 3: Import Naming Conflict in Grid Component
-**Error**: `Import 'Grid' conflicts with local value, so must be declared with a type-only import`
-**Location**: `components/Grid.tsx` line 4
-**Cause**: Both `Grid` type and `Grid` component had same name
-**Solution**: Changed import to `import { Position, CellState, type Grid } from '@/types'`
-**Result**: Resolved naming conflict with type-only import
 
-### Bug 4: Tailwind CSS Not Loading in Production
+### Bug 3: Tailwind CSS Not Loading in Production
 **Error**: "No utility classes were detected" and no CSS styling in deployed app
 **Cause**: 
 1. Tailwind config still pointing to `src/` directories after moving files to root
@@ -39,7 +33,7 @@
 4. Added click handlers for AI grid interaction
 **Result**: Tailwind CSS now processes correctly and Grid renders as proper 10x10 with colors
 
-### Bug 5: AI Getting Stuck After First Attack
+### Bug 4: AI Getting Stuck After First Attack
 **Error**: AI would stop making moves after first attack or get stuck in hunt mode
 **Causes**:
 1. AI was targeting its own grid instead of opponent's grid
@@ -55,26 +49,14 @@
 6. Removed conflicting manual AI turn triggers that caused timing issues
 **Result**: AI now intelligently hunts ships and continues making moves throughout the game
 
-### Bug 6: Grid Row Number Alignment
+### Bug 5: Grid Row Number Alignment
 **Error**: Row numbers (1-10) were misaligned, appearing 1.5 rows above grid
 **Location**: `components/Grid.tsx` row labels positioning
 **Cause**: Absolute positioning with `top-0` didn't account for header spacing
 **Solution**: Changed from `top-0` to `top-2` and added `relative` to main container
 **Result**: Row numbers now align correctly with grid rows
 
-### Bug 7: Missing Hit/Miss Visual Feedback
-**Error**: No visual indication when player or AI hits/misses
-**Cause**: No shot result tracking or display system
-**Solutions**:
-1. Added `lastShotResult` state tracking to main game component
-2. Updated `BattlePhaseProps` interface to include shot result prop
-3. Added shot result display with "🎯 Hit!" and "💭 Miss!" messages
-4. Implemented 1-second display duration with fade animations
-5. Changed AI name from "AI Thinking..." to "HorAItio Nelson (AI)"
-6. Added shot result tracking for both player and AI turns
-**Result**: Clear visual feedback appears above grid for 1 second after each shot
-
-### Bug 8: Hit/Miss Positioning and AI Verification
+### Bug 6: Hit/Miss Positioning and AI Verification
 **Error**: Hit/miss display appeared in screen center instead of above target square; AI hitting capability questioned
 **Cause**: No tracking of exact shot positions for display positioning
 **Solutions**:
@@ -85,7 +67,7 @@
 5. Added position tracking for both player and AI turns
 **Result**: Hit/miss messages now appear above the actual square that was attacked
 
-### Bug 9: AI Targeting Logic Error
+### Bug 7: AI Targeting Logic Error
 **Error**: AI was not hitting player ships - targeting empty cells instead of ship cells
 **Location**: `lib/aiLogic.ts` `getNextShot` function
 **Cause**: AI was filtering for empty cells instead of ship cells
@@ -93,17 +75,7 @@
 **Fixed Code**: `if (opponentPlayer.grid[cellKey] === 'ship' && !this.attemptedShots.has(cellKey))`
 **Result**: AI now correctly targets ship cells and can hit player ships
 
-### Bug 10: Console Debugging Added
-**Error**: Need to verify AI targeting behavior and hit/miss positioning
-**Cause**: No visibility into AI decision-making process
-**Solutions**:
-1. Added debug logging to AI targeting logic
-2. Added debug logging to Grid component cell states
-3. Added debug logging to hit/miss positioning calculations
-4. Added console logging to verify shot result positioning
-**Result**: Can now track AI behavior and verify correct functionality
-
-### Bug 11: Hit/Miss Icons Not Appearing on Consecutive Same-Result Attacks
+### Bug 8: Hit/Miss Icons Not Appearing on Consecutive Same-Result Attacks
 **Error**: Hit/Miss icons would not appear when consecutive attacks had the same outcome (hit after hit, miss after miss)
 **Location**: `components/BattlePhase.tsx` useEffect dependency array
 **Cause**: useEffect only depended on `lastShotResult`, so React wouldn't re-trigger the effect if the result was the same as the previous attack
@@ -112,7 +84,7 @@
 **Solution**: Added `lastShotPosition` to the dependency array so the effect triggers on every attack regardless of outcome
 **Result**: Hit/Miss icons now appear after every single attack by both player and AI
 
-### Bug 12: Initial "Miss!" Notification Appearing When Starting Battle
+### Bug 9: Initial "Miss!" Notification Appearing When Starting Battle
 **Error**: A "Miss!" notification would appear immediately after clicking "Start Battle" before any attacks were made
 **Location**: `app/page.tsx` `handleStartGame` function
 **Cause**: The `lastShotResult` and `lastShotPosition` state variables were not being cleared when transitioning from ship placement to battle phase
@@ -124,3 +96,203 @@ setLastShotResult(null);
 setLastShotPosition(null);
 ```
 **Result**: No notification appears when starting battle - only after actual attacks are made
+
+### Bug 10: Drag and Drop Positioning Not Respecting Grabbed Cell
+**Error**: When dragging a ship by any cell other than the origin, the ship would be placed as if grabbed from the origin cell
+**Location**: `app/page.tsx` `handleShipDrop` function
+**Cause**: The drag and drop logic always used the drop position as the ship's origin, regardless of which cell was actually grabbed
+**Solution**: 
+1. Added `draggedShipCellIndex` state to track which ship cell was grabbed
+2. Updated `handleShipDragStart` to find and store the index of the grabbed cell
+3. Modified `handleShipDrop` to calculate the correct placement offset:
+   ```typescript
+   // Calculate the offset needed to place the ship so the grabbed cell ends up at the drop position
+   const grabbedCell = draggedShip.positions[draggedShipCellIndex];
+   const shipOrigin = draggedShip.positions[0];
+   
+   // Calculate the offset from ship origin to grabbed cell
+   const rowOffset = grabbedCell.row - shipOrigin.row;
+   const colOffset = grabbedCell.col - shipOrigin.col;
+   
+   // Calculate the new ship origin position
+   const newOrigin = {
+     row: position.row - rowOffset,
+     col: position.col - colOffset
+   };
+   ```
+**Result**: Ships now correctly position based on which cell was grabbed - if you grab the 3rd cell, that cell will be placed at the drop location
+
+### Bug 11: Initial "Miss!" Notification Appearing When Starting Battle
+**Error**: A "Miss!" notification would appear immediately after clicking "Start Battle" before any attacks were made
+**Location**: `app/page.tsx` `handleStartGame` function
+**Cause**: The `lastShotResult` and `lastShotPosition` state variables were not being cleared when transitioning from ship placement to battle phase
+**Solution**: Added `setLastShotResult(null)` and `setLastShotPosition(null)` to both `handleStartGame` and `handleReset` functions
+**Code Added**:
+```typescript
+// Clear any previous shot results
+setLastShotResult(null);
+setLastShotPosition(null);
+```
+**Result**: No notification appears when starting battle - only after actual attacks are made
+
+### Bug 12: Hit/Miss Icons Not Appearing on Consecutive Same-Result Attacks
+**Error**: Hit/Miss icons would not appear when consecutive attacks had the same outcome (hit after hit, miss after miss)
+**Location**: `components/BattlePhase.tsx` useEffect dependency array
+**Cause**: useEffect only depended on `lastShotResult`, so React wouldn't re-trigger the effect if the result was the same as the previous attack
+**Original Code**: `}, [lastShotResult]);`
+**Fixed Code**: `}, [lastShotResult, lastShotPosition]); // Add lastShotPosition to trigger on every attack`
+**Solution**: Added `lastShotPosition` to the dependency array so the effect triggers on every attack regardless of outcome
+**Result**: Hit/Miss icons now appear after every single attack by both player and AI
+
+### Bug 13: Drag and Drop Positioning Not Respecting Grabbed Cell
+**Error**: When dragging a ship by any cell other than the origin, the ship would be placed as if grabbed from the origin cell
+**Location**: `app/page.tsx` `handleShipDrop` function
+**Cause**: The drag and drop logic always used the drop position as the ship's origin, regardless of which cell was actually grabbed
+**Solution**: 
+1. Added `draggedShipCellIndex` state to track which ship cell was grabbed
+2. Updated `handleShipDragStart` to find and store the index of the grabbed cell
+3. Modified `handleShipDrop` to calculate the correct placement offset:
+   ```typescript
+   // Calculate the offset needed to place the ship so the grabbed cell ends up at the drop position
+   const grabbedCell = draggedShip.positions[draggedShipCellIndex];
+   const shipOrigin = draggedShip.positions[0];
+   
+   // Calculate the offset from ship origin to grabbed cell
+   const rowOffset = grabbedCell.row - shipOrigin.row;
+   const colOffset = grabbedCell.col - shipOrigin.col;
+   
+   // Calculate the new ship origin position
+   const newOrigin = {
+     row: position.row - rowOffset,
+     col: position.col - colOffset
+   };
+   ```
+**Result**: Ships now correctly position based on which cell was grabbed - if you grab the 3rd cell, that cell will be placed at the drop location
+
+### Bug 14: Already Attacked Cells Still Clickable
+**Error**: Players could click on cells that had already been attacked (hit, miss, or sunk) and attempt to attack them again
+**Location**: `components/Grid.tsx` cell click handler
+**Cause**: The click handler didn't check if a cell had already been attacked before allowing the click
+**Solution**: 
+1. Added `isAttacked` check in `getCellClass` to change cursor to 'not-allowed' for attacked cells
+2. Created `handleCellClickWithCheck` function to prevent clicks on already attacked cells:
+   ```typescript
+   const handleCellClickWithCheck = (row: number, col: number, cellState: CellState) => {
+     // Prevent clicks on already attacked cells
+     const isAttacked = cellState === 'hit' || cellState === 'miss' || cellState === 'sunk';
+     if (!isAttacked && onCellClick) {
+       onCellClick({ row, col });
+     }
+   };
+   ```
+3. Updated grid cells to use the new click handler with cell state check
+**Result**: Already attacked cells now show a 'not-allowed' cursor and cannot be clicked for the rest of the game
+
+### Bug 15: Drag and Drop Orientation Not Preserved
+**Error**: When dragging a vertically placed ship to a new position, it would revert to horizontal orientation
+**Location**: `app/page.tsx` `handleShipDrop` function
+**Cause**: The drag and drop logic was using the global `gameState.shipOrientation` instead of the ship's actual current orientation
+**Solution**: 
+1. Added `getShipOrientation` helper function to determine ship orientation from its positions:
+   ```typescript
+   const getShipOrientation = (positions: Position[]): Orientation => {
+     if (positions.length < 2) return 'horizontal';
+     const first = positions[0];
+     const second = positions[1];
+     return first.row === second.row ? 'horizontal' : 'vertical';
+   };
+   ```
+2. Updated `handleShipDrop` to use the ship's current orientation:
+   ```typescript
+   // Determine the ship's current orientation from its positions
+   const shipOrientation = getShipOrientation(draggedShip.positions);
+   // Try to place ship at the calculated origin position with its current orientation
+   const canPlace = canPlaceShip(player.grid, { size: shipSize } as any, newOrigin, shipOrientation);
+   ```
+**Result**: Ships now maintain their original orientation when dragged and dropped to new positions
+
+### Bug 16: AI Hunt Mode Not Focused on Ship Elimination
+**Error**: AI would leave a ship after a few hits and not finish knocking it out, jumping between different ships instead of systematically eliminating one at a time
+**Location**: `lib/aiLogic.ts` AI hunt mode logic
+**Cause**: AI was tracking all hits globally instead of focusing on individual ships, and would exit hunt mode too early
+**Solution**: 
+1. Added `currentShipHits` array to track hits on the specific ship being hunted
+2. Enhanced hunt mode to focus on adjacent cells around current ship hits:
+   ```typescript
+   // First, try to finish off the current ship by targeting adjacent cells to any hit
+   const allAdjacentTargets: Position[] = [];
+   for (const hitPosition of this.currentShipHits) {
+     const adjacentPositions = this.getAdjacentPositions(hitPosition);
+     const validTargets = adjacentPositions.filter(pos => 
+       isValidPosition(pos) && 
+       !this.attemptedShots.has(positionToKey(pos))
+     );
+     allAdjacentTargets.push(...validTargets);
+   }
+   ```
+3. Added `prioritizeTargets()` method for intelligent target selection based on proximity and patterns
+4. Only exit hunt mode when all adjacent cells around current ship are exhausted
+**Result**: AI now systematically sinks ships one by one instead of jumping between different ships
+
+### Bug 17: User Can Attack During AI Turn
+**Error**: Users could click on enemy grid cells and attack even while the AI was still processing its move
+**Location**: `app/page.tsx` player shot handler and BattlePhase component
+**Cause**: No mechanism to prevent user attacks during AI's thinking/processing time
+**Solution**: 
+1. Added `isAIThinking` state to track when AI is processing its move:
+   ```typescript
+   const [isAIThinking, setIsAIThinking] = useState(false);
+   ```
+2. Updated AI turn logic to set thinking state:
+   ```typescript
+   setIsAIThinking(true); // Start AI thinking
+   const timer = setTimeout(() => {
+     handleAITurn();
+     setIsAIThinking(false); // End AI thinking
+   }, 1500);
+   ```
+3. Blocked player shots during AI thinking:
+   ```typescript
+   const handlePlayerShot = (position: Position) => {
+     if (gameState.phase !== 'battle' || gameState.currentPlayer !== 'player' || gameState.winner || isAIThinking) return;
+     if (gameState.phase !== 'battle' || gameState.currentPlayer !== 'player' || gameState.winner || isAIThinking || position.row < 0 || position.row >= 10 || position.col < 0 || position.col >= 10) return;
+   ```
+4. Updated BattlePhase to disable grid clicks when AI is thinking
+**Result**: Users can only attack during their turn and must wait for AI to complete its move before attacking again
+
+### Bug 18: AI Not Making Move After Player's First Turn
+**Error**: AI would not make a move after the player's first turn, getting stuck and not triggering its turn
+**Location**: `app/page.tsx` useEffect for AI turn triggering
+**Cause**: Circular dependency in useEffect dependency array - it included `isAIThinking` which is set by the AI turn logic, causing the effect to potentially not trigger properly
+**Solution**: Removed `isAIThinking` from the useEffect dependency array to eliminate circular dependency:
+   ```typescript
+   // Before (problematic):
+   }, [gameState.currentPlayer, gameState.phase, gameState.winner, isAIThinking]);
+   
+   // After (fixed):
+   }, [gameState.currentPlayer, gameState.phase, gameState.winner]);
+   ```
+**Result**: AI turn now triggers properly when it becomes the AI's turn, without circular dependency issues
+
+### Bug 19: AI Continues Hunt Mode After Sinking Ship
+**Error**: AI would continue focusing on attacking squares around a ship even after it was sunk, instead of returning to standard random selection
+**Location**: `lib/aiLogic.ts` AI hunt mode logic
+**Cause**: AI wasn't detecting when it had sunk a ship, so it would remain in hunt mode and continue targeting the area around the sunk ship
+**Solution**: 
+1. Enhanced `processShotResult` method to accept `sunkShip` parameter:
+   ```typescript
+   processShotResult(hit: boolean, position: Position, opponentPlayer: Player, sunkShip: Ship | null): void
+   ```
+2. Added ship sinking detection and immediate hunt mode reset:
+   ```typescript
+   // Check if this hit sunk a ship
+   if (sunkShip) {
+     // Ship was sunk, clear current ship tracking and return to standard selection
+     this.currentShipHits = [];
+     this.huntMode = false;
+     this.lastHit = null;
+   }
+   ```
+3. Updated AI turn handler to pass sunk ship information from `processShot` function
+4. Added `Ship` type import to `aiLogic.ts`
+**Result**: AI now properly exits hunt mode immediately after sinking a ship and returns to standard random selection until it hits another ship

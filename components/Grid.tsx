@@ -7,20 +7,31 @@ import { positionToKey } from '@/lib/gameLogic';
 interface GridProps {
   grid: Grid;
   onCellClick?: (position: Position) => void;
+  onCellDrop?: (position: Position) => void;
+  onCellDragStart?: (position: Position) => void;
+  onCellDragOver?: (e: React.DragEvent, position: Position) => void;
   showShips?: boolean;
   isOpponent?: boolean;
   className?: string;
+  draggableShips?: boolean;
 }
 
 const Grid: React.FC<GridProps> = ({ 
   grid, 
   onCellClick, 
+  onCellDrop,
+  onCellDragStart,
+  onCellDragOver,
   showShips = false, 
   isOpponent = false,
-  className = '' 
+  className = '',
+  draggableShips = false
 }) => {
   const getCellClass = (cellState: CellState): string => {
-    const baseClass = 'w-8 h-8 border border-ocean-300 dark:border-gray-600 flex items-center justify-center text-xs font-bold cursor-pointer transition-all duration-200';
+    const isAttacked = cellState === 'hit' || cellState === 'miss' || cellState === 'sunk';
+    const baseClass = `w-8 h-8 border border-ocean-300 dark:border-gray-600 flex items-center justify-center text-xs font-bold transition-all duration-200 ${
+      isAttacked ? 'cursor-default' : 'cursor-pointer'
+    }`;
     
     // Debug: Log cell state to verify Tailwind is working
     console.log(`Cell state: ${cellState}, class: ${baseClass}`);
@@ -63,6 +74,34 @@ const Grid: React.FC<GridProps> = ({
     }
   };
 
+  const handleCellClickWithCheck = (row: number, col: number, cellState: CellState) => {
+    // Prevent clicks on already attacked cells
+    const isAttacked = cellState === 'hit' || cellState === 'miss' || cellState === 'sunk';
+    if (!isAttacked && onCellClick) {
+      onCellClick({ row, col });
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent, row: number, col: number) => {
+    if (onCellDragStart && draggableShips) {
+      onCellDragStart({ row, col });
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent, row: number, col: number) => {
+    e.preventDefault();
+    if (onCellDragOver) {
+      onCellDragOver(e, { row, col });
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, row: number, col: number) => {
+    e.preventDefault();
+    if (onCellDrop) {
+      onCellDrop({ row, col });
+    }
+  };
+
   return (
     <div className={`inline-block relative ${className}`}>
       <div className={`grid grid-cols-10 gap-0 border-2 border-ocean-600 dark:border-ocean-400 bg-ocean-50 dark:bg-gray-800`}>
@@ -75,7 +114,11 @@ const Grid: React.FC<GridProps> = ({
               <div
                 key={key}
                 className={getCellClass(cellState)}
-                onClick={() => handleCellClick(row, col)}
+                onClick={() => handleCellClickWithCheck(row, col, cellState)}
+                draggable={draggableShips && cellState === 'ship' && showShips}
+                onDragStart={(e) => handleDragStart(e, row, col)}
+                onDragOver={(e) => handleDragOver(e, row, col)}
+                onDrop={(e) => handleDrop(e, row, col)}
                 role="button"
                 tabIndex={0}
                 aria-label={`Cell ${String.fromCharCode(65 + col)}${row + 1}`}

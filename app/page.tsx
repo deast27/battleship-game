@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { GameState, ShipType, Orientation, Position, Player } from '@/types';
+import { GameState, ShipType, Orientation, Position, Player, Ship } from '@/types';
 import { 
   createEmptyGrid, 
   createShip, 
@@ -10,7 +10,9 @@ import {
   processShot, 
   isGameOver,
   placeShipsRandomly,
-  SHIP_CONFIGS
+  SHIP_CONFIGS,
+  positionToKey,
+  getShipPositions
 } from '@/lib/gameLogic';
 import { AIPlayer } from '@/lib/aiLogic';
 import ShipPlacement from '@/components/ShipPlacement';
@@ -48,17 +50,23 @@ const BattleshipGame: React.FC = () => {
   const [aiPlayer] = useState(() => new AIPlayer());
   const [lastShotResult, setLastShotResult] = useState<'hit' | 'miss' | null>(null);
   const [lastShotPosition, setLastShotPosition] = useState<Position | null>(null);
+  const [draggedShip, setDraggedShip] = useState<Ship | null>(null);
+  const [draggedShipCellIndex, setDraggedShipCellIndex] = useState<number>(0);
+  const [showFinalBoard, setShowFinalBoard] = useState(true); // Show final board by default
+  const [isAIThinking, setIsAIThinking] = useState(false); // Track AI thinking state
 
   // Auto-trigger AI turn when it's AI's turn
   useEffect(() => {
-    if (gameState.phase === 'battle' && gameState.currentPlayer === 'ai' && !gameState.winner) {
+    if (gameState.phase === 'battle' && gameState.currentPlayer === 'ai' && !gameState.winner && !isAIThinking) {
+      setIsAIThinking(true); // Start AI thinking
       const timer = setTimeout(() => {
         handleAITurn();
+        setIsAIThinking(false); // End AI thinking
       }, 1500); // Give AI thinking time
       
       return () => clearTimeout(timer);
     }
-  }, [gameState.currentPlayer, gameState.phase, gameState.winner]);
+  }, [gameState.currentPlayer, gameState.phase, gameState.winner]); // Remove isAIThinking from dependencies
 
   // Handle ship selection
   const handleShipSelect = (shipType: ShipType) => {
@@ -126,6 +134,114 @@ const BattleshipGame: React.FC = () => {
     aiPlayer.reset();
     setLastShotResult(null);
     setLastShotPosition(null);
+    setDraggedShip(null);
+    setDraggedShipCellIndex(0);
+    setShowFinalBoard(false); // Hide final board when starting new game
+    setIsAIThinking(false); // Reset AI thinking state
+  };
+
+  // Drag and drop handlers
+  const handleShipDragStart = (position: Position) => {
+    const { player } = gameState;
+    const ship = player.ships.find(ship => 
+      ship.positions.some(pos => positionToKey(pos) === positionToKey(position))
+    );
+    if (ship) {
+      setDraggedShip(ship);
+      // Find which cell index was grabbed
+      const cellIndex = ship.positions.findIndex(pos => positionToKey(pos) === positionToKey(position));
+      setDraggedShipCellIndex(cellIndex);
+    }
+  };
+
+  // Helper function to determine ship orientation from its positions
+  const getShipOrientation = (positions: Position[]): Orientation => {
+    if (positions.length < 2) return 'horizontal';
+    const first = positions[0];
+    const second = positions[1];
+    return first.row === second.row ? 'horizontal' : 'vertical';
+  };
+
+  const handleShipDrop = (position: Position) => {
+    if (!draggedShip || gameState.phase !== 'placement') return;
+
+    const { player } = gameState;
+    const shipSize = draggedShip.size;
+    
+    // Determine the ship's current orientation from its positions
+    const shipOrientation = getShipOrientation(draggedShip.positions);
+    
+    // Calculate the offset needed to place the ship so the grabbed cell ends up at the drop position
+    const grabbedCell = draggedShip.positions[draggedShipCellIndex];
+    const shipOrigin = draggedShip.positions[0];
+    
+    // Calculate the offset from ship origin to grabbed cell
+    const rowOffset = grabbedCell.row - shipOrigin.row;
+    const colOffset = grabbedCell.col - shipOrigin.col;
+    
+    // Calculate the new ship origin position
+    const newOrigin = {
+      row: position.row - rowOffset,
+      col: position.col - colOffset
+    };
+    
+    // Try to place ship at the calculated origin position with its current orientation
+    const canPlace = canPlaceShip(player.grid, { size: shipSize } as any, newOrigin, shipOrientation);
+    
+    if (canPlace) {
+      // Remove ship from old position
+      const newGrid = { ...player.grid };
+      draggedShip.positions.forEach(pos => {
+        newGrid[positionToKey(pos)] = 'empty';
+      });
+      
+      // Place ship at new position with its original orientation
+      const positions = getShipPositions(newOrigin, shipSize, shipOrientation);
+      const updatedShip = { ...draggedShip, positions };
+      
+      positions.forEach(pos => {
+        newGrid[positionToKey(pos)] = 'ship';
+      });
+      
+      // Update game state
+      setGameState(prev => ({
+        ...prev,
+        player: {
+          ...prev.player,
+          grid: newGrid,
+          ships: prev.player.ships.map(s => s.id === draggedShip.id ? updatedShip : s)
+        }
+      }));
+    }
+    
+    setDraggedShip(null);
+    setDraggedShipCellIndex(0);
+  };
+
+  // Remove ship from grid
+  const handleRemoveShip = (shipType: ShipType) => {
+    const { player } = gameState;
+    const shipToRemove = player.ships.find(ship => ship.type === shipType);
+    
+    if (shipToRemove) {
+      // Clear ship positions from grid
+      const newGrid = { ...player.grid };
+      shipToRemove.positions.forEach(pos => {
+        newGrid[positionToKey(pos)] = 'empty';
+      });
+      
+      // Remove ship from ships array
+      const updatedShips = player.ships.filter(ship => ship.id !== shipToRemove.id);
+      
+      setGameState(prev => ({
+        ...prev,
+        player: {
+          ...prev.player,
+          grid: newGrid,
+          ships: updatedShips
+        }
+      }));
+    }
   };
 
   // Start battle phase
@@ -150,7 +266,7 @@ const BattleshipGame: React.FC = () => {
 
   // Handle player shot
   const handlePlayerShot = (position: Position) => {
-    if (gameState.phase !== 'battle' || gameState.currentPlayer !== 'player' || gameState.winner) return;
+    if (gameState.phase !== 'battle' || gameState.currentPlayer !== 'player' || gameState.winner || isAIThinking) return;
 
     const { ai } = gameState;
     const { hit, sunkShip } = processShot(ai, position);
@@ -172,6 +288,7 @@ const BattleshipGame: React.FC = () => {
     if (isGameOver(ai)) {
       newGameState.winner = 'player';
       newGameState.phase = 'gameOver';
+      setShowFinalBoard(true); // Show final board when game ends
     } else {
       // Switch to AI turn is already handled above
     }
@@ -193,7 +310,7 @@ const BattleshipGame: React.FC = () => {
     setLastShotResult(hit ? 'hit' : 'miss');
     setLastShotPosition(shotPosition);
 
-    aiPlayer.processShotResult(hit, shotPosition);
+    aiPlayer.processShotResult(hit, shotPosition, player, sunkShip);
 
     const newGameState = {
       ...gameState,
@@ -208,6 +325,7 @@ const BattleshipGame: React.FC = () => {
     if (isGameOver(player)) {
       newGameState.winner = 'ai';
       newGameState.phase = 'gameOver';
+      setShowFinalBoard(true); // Show final board when game ends
     }
 
     setGameState(newGameState);
@@ -216,6 +334,12 @@ const BattleshipGame: React.FC = () => {
   // Handle new game
   const handleNewGame = () => {
     handleReset();
+    setShowFinalBoard(false);
+  };
+
+  // Toggle final board view
+  const handleToggleFinalBoard = () => {
+    setShowFinalBoard(!showFinalBoard);
   };
 
   return (
@@ -241,6 +365,7 @@ const BattleshipGame: React.FC = () => {
                 onPlaceShip={handlePlaceShip}
                 onRandomPlacement={handleRandomPlacement}
                 onReset={handleReset}
+                onRemoveShip={handleRemoveShip}
                 onStartGame={handleStartGame}
                 grid={gameState.player.grid}
               />
@@ -254,8 +379,11 @@ const BattleshipGame: React.FC = () => {
                   <Grid
                     grid={gameState.player.grid}
                     onCellClick={gameState.selectedShip ? handlePlaceShip : undefined}
+                    onCellDragStart={handleShipDragStart}
+                    onCellDrop={handleShipDrop}
                     showShips={true}
                     isOpponent={false}
+                    draggableShips={true}
                   />
                 </div>
               </div>
@@ -272,6 +400,9 @@ const BattleshipGame: React.FC = () => {
               winner={gameState.winner}
               lastShotResult={lastShotResult}
               lastShotPosition={lastShotPosition}
+              showFinalBoard={showFinalBoard}
+              onToggleFinalBoard={handleToggleFinalBoard}
+              isAIThinking={isAIThinking}
             />
           )}
 
@@ -285,6 +416,9 @@ const BattleshipGame: React.FC = () => {
               winner={gameState.winner}
               lastShotResult={lastShotResult}
               lastShotPosition={lastShotPosition}
+              showFinalBoard={showFinalBoard}
+              onToggleFinalBoard={handleToggleFinalBoard}
+              isAIThinking={isAIThinking}
             />
           )}
         </main>
