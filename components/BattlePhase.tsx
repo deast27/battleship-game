@@ -67,12 +67,12 @@ const BattlePhase: React.FC<BattlePhaseProps> = ({
 
   if (winner) {
     return (
-      <div className="bg-white rounded-lg shadow-lg p-8 max-w-4xl mx-auto text-center">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-4xl mx-auto text-center">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-4">
             {winner === 'player' ? '🎉 Victory!' : '💔 Defeat'}
           </h1>
-          <p className="text-xl text-gray-700 mb-6">
+          <p className="text-xl text-gray-700 dark:text-gray-300 mb-6">
             {winner === 'player' 
               ? 'Congratulations! You sunk all enemy ships!' 
               : 'The AI has sunk all your ships. Try again!'}
