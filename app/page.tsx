@@ -372,8 +372,38 @@ const BattleshipGame: React.FC = () => {
                 onCellDrop={handleShipDrop}
               />
               
-              {/* How to Play Section */}
-              <div className="max-w-2xl mx-auto">
+              {/* How to Play Section - Desktop Only */}
+              <div className="hidden lg:block max-w-2xl mx-auto">
+                <h3 className="text-lg font-semibold text-ocean-700 dark:text-ocean-300 mb-4">
+                  How to Play
+                </h3>
+                <div className="bg-ocean-50 dark:bg-gray-700 rounded-lg p-4 space-y-3 text-sm text-ocean-700 dark:text-ocean-300">
+                  <p>• <strong>Select a ship</strong> from the left panel</p>
+                  <p>• <strong>Choose orientation</strong> (horizontal or vertical)</p>
+                  <p>• <strong>Click on the grid</strong> to place your ship</p>
+                  <p>• <strong>Ships cannot overlap</strong> or go out of bounds</p>
+                  <p>• <strong>Use random placement</strong> for quick setup</p>
+                  <p>• <strong>Place all 5 ships</strong> to start the battle</p>
+                </div>
+
+                <div className="mt-6">
+                  <h4 className="font-semibold text-ocean-700 dark:text-ocean-300 mb-2">Fleet Status</h4>
+                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      Ships placed: {gameState.player.ships.length} / {SHIP_CONFIGS.length}
+                    </p>
+                    <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 mt-2">
+                      <div 
+                        className="bg-ocean-500 h-2 rounded-full transition-all"
+                        style={{ width: `${(gameState.player.ships.length / SHIP_CONFIGS.length) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* How to Play Section - Mobile Only */}
+              <div className="lg:hidden max-w-2xl mx-auto">
                 <h3 className="text-lg font-semibold text-ocean-700 dark:text-ocean-300 mb-4">
                   How to Play
                 </h3>

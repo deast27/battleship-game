@@ -212,6 +212,7 @@ const Grid: React.FC<GridProps> = ({
     }
   };
 
+  // Simplified approach - just use desktop drag and drop with better mobile support
   const handleDragStart = (e: React.DragEvent, row: number, col: number) => {
     if (onCellDragStart && draggableShips) {
       onCellDragStart({ row, col });
