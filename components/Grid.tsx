@@ -158,7 +158,7 @@ const Grid: React.FC<GridProps> = ({
 
   const getCellClass = (row: number, col: number, cellState: CellState): string => {
     const isAttacked = cellState === 'hit' || cellState === 'miss' || cellState === 'sunk';
-    const baseClass = `w-8 h-8 border border-ocean-300 dark:border-gray-600 flex items-center justify-center text-xs font-bold transition-all duration-200 ${
+    const baseClass = `w-8 h-8 border border-ocean-300 dark:border-gray-600 border-opacity-50 dark:border-opacity-50 flex items-center justify-center text-xs font-bold transition-all duration-200 ${
       isAttacked ? 'cursor-default' : 'cursor-pointer'
     }`;
     
@@ -174,7 +174,7 @@ const Grid: React.FC<GridProps> = ({
       case 'hit':
         return `${baseClass} bg-ship-hit text-white animate-pulse`;
       case 'miss':
-        return `${baseClass} bg-ship-miss dark:bg-gray-500`;
+        return `${baseClass} bg-ship-miss dark:bg-gray-400`;
       case 'sunk':
         return `${baseClass} bg-red-600 text-white`;
       default:
@@ -238,11 +238,11 @@ const Grid: React.FC<GridProps> = ({
       <div 
         className={`grid grid-cols-10 gap-0 border-2 border-ocean-600 dark:border-ocean-400 relative overflow-hidden`}
         style={{
-          backgroundImage: 'url(/oceanwater.gif)',
+          backgroundImage: 'url(/oceanwater.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          opacity: 0.5
+          opacity: 0.8
         }}
       >
         {Array.from({ length: 10 }, (_, row) =>
