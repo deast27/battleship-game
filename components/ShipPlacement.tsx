@@ -3,6 +3,7 @@
 import React from 'react';
 import { Ship, ShipType, Orientation, Position } from '@/types';
 import { SHIP_CONFIGS, canPlaceShip, getShipPositions } from '@/lib/gameLogic';
+import Grid from './Grid';
 
 interface ShipPlacementProps {
   ships: Ship[];
@@ -16,6 +17,8 @@ interface ShipPlacementProps {
   onRemoveShip: (shipType: ShipType) => void;
   onStartGame: () => void;
   grid: any; // Will be typed properly when dependencies are installed
+  onCellDragStart?: (position: Position) => void;
+  onCellDrop?: (position: Position) => void;
 }
 
 const ShipPlacement: React.FC<ShipPlacementProps> = ({
@@ -29,7 +32,9 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
   onReset,
   onRemoveShip,
   onStartGame,
-  grid
+  grid,
+  onCellDragStart,
+  onCellDrop
 }) => {
   const getShipDisplayName = (shipType: ShipType): string => {
     const names = {
@@ -139,34 +144,21 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
           </div>
         </div>
 
-        {/* Instructions */}
-        <div>
+        {/* Your Fleet Grid */}
+        <div className="flex flex-col items-center">
           <h3 className="text-lg font-semibold text-ocean-700 dark:text-ocean-300 mb-4">
-            How to Play
+            Your Fleet
           </h3>
-          <div className="bg-ocean-50 dark:bg-gray-700 rounded-lg p-4 space-y-3 text-sm text-ocean-700 dark:text-ocean-300">
-            <p>• <strong>Select a ship</strong> from the left panel</p>
-            <p>• <strong>Choose orientation</strong> (horizontal or vertical)</p>
-            <p>• <strong>Click on the grid</strong> to place your ship</p>
-            <p>• <strong>Ships cannot overlap</strong> or go out of bounds</p>
-            <p>• <strong>Use random placement</strong> for quick setup</p>
-            <p>• <strong>Place all 5 ships</strong> to start the battle</p>
-          </div>
-
-          <div className="mt-6">
-            <h4 className="font-semibold text-ocean-700 dark:text-ocean-300 mb-2">Fleet Status</h4>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                Ships placed: {ships.length} / {SHIP_CONFIGS.length}
-              </p>
-              <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 mt-2">
-                <div 
-                  className="bg-ocean-500 h-2 rounded-full transition-all"
-                  style={{ width: `${(ships.length / SHIP_CONFIGS.length) * 100}%` }}
-                />
-              </div>
-            </div>
-          </div>
+          <Grid
+            grid={grid}
+            onCellClick={onPlaceShip}
+            onCellDragStart={onCellDragStart}
+            onCellDrop={onCellDrop}
+            showShips={true}
+            isOpponent={false}
+            draggableShips={true}
+            ships={ships}
+          />
         </div>
       </div>
     </div>

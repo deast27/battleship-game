@@ -716,6 +716,9 @@ video {
 .max-w-6xl {
   max-width: 72rem;
 }
+.max-w-2xl {
+  max-width: 42rem;
+}
 .-translate-x-full {
   --tw-translate-x: -100%;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
@@ -764,6 +767,9 @@ video {
 }
 .grid-rows-10 {
   grid-template-rows: repeat(10, minmax(0, 1fr));
+}
+.flex-col {
+  flex-direction: column;
 }
 .items-center {
   align-items: center;
