@@ -72,6 +72,17 @@ const BattlePhase: React.FC<BattlePhaseProps> = ({
           <h1 className="text-4xl font-bold mb-4">
             {winner === 'player' ? '🎉 Victory!' : '💔 Defeat'}
           </h1>
+          {winner === 'player' && (
+            <div className="flex justify-center mb-4">
+              <img 
+                src="/mission-accomplished.gif"
+                alt="Mission Accomplished"
+                width={350}
+                height={350}
+                className="rounded-lg shadow-lg"
+              />
+            </div>
+          )}
           <p className="text-xl text-gray-700 dark:text-gray-300 mb-6">
             {winner === 'player' 
               ? 'Congratulations! You sunk all enemy ships!' 
@@ -116,6 +127,7 @@ const BattlePhase: React.FC<BattlePhaseProps> = ({
                     grid={player.grid}
                     showShips={true}
                     isOpponent={false}
+                    ships={player.ships}
                   />
                 </div>
               </div>
@@ -126,6 +138,7 @@ const BattlePhase: React.FC<BattlePhaseProps> = ({
                     grid={ai.grid}
                     showShips={true}
                     isOpponent={false}
+                    ships={ai.ships}
                   />
                 </div>
               </div>
@@ -163,6 +176,7 @@ const BattlePhase: React.FC<BattlePhaseProps> = ({
                 grid={player.grid}
                 showShips={true}
                 isOpponent={false}
+                ships={player.ships}
               />
             </div>
           </div>
@@ -191,9 +205,10 @@ const BattlePhase: React.FC<BattlePhaseProps> = ({
             <div className="relative">
               <Grid
                 grid={ai.grid}
-                showShips={false}
+                showShips={true}
                 isOpponent={true}
                 onCellClick={currentPlayer === 'player' && !isAIThinking ? onPlayerShot : undefined}
+                ships={ai.ships}
               />
             </div>
           </div>

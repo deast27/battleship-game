@@ -45,3 +45,15 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
   }
 }
+
+@keyframes slowWater {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}

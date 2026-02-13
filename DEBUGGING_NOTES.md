@@ -296,3 +296,36 @@ setLastShotPosition(null);
 3. Updated AI turn handler to pass sunk ship information from `processShot` function
 4. Added `Ship` type import to `aiLogic.ts`
 **Result**: AI now properly exits hunt mode immediately after sinking a ship and returns to standard random selection until it hits another ship
+
+### Bug 20: Ship Image Rotation and Rendering Issues
+**Error**: Ship images were blurry, distorted, or not rotating correctly when placed in different orientations
+**Location**: `components/ShipIcons.tsx` and `components/Grid.tsx`
+**Causes**:
+1. Initial attempt to use CSS transforms (`rotate(90deg)`) caused blur and distortion
+2. Multiple CSS rendering properties (`crisp-edges`, `pixelated`, etc.) didn't resolve the blur
+3. Grid component was calculating ship orientation correctly but not passing the `orientation` prop to ShipIcon components
+4. All ships were receiving `orientation: 'horizontal'` regardless of actual placement
+**Solutions**:
+1. **Abandoned CSS rotation approach**: Stopped trying to rotate images with CSS transforms
+2. **Implemented separate PNG files**: Created orientation-specific image files:
+   - `{ship}-horizontal.png` for left-to-right placement
+   - `{ship}-vertical.png` for top-to-bottom placement
+3. **Fixed prop passing**: Added `orientation={orientation}` to IconComponent in Grid.tsx ship overlay rendering:
+   ```typescript
+   <IconComponent 
+     size={orientation === 'horizontal' ? ship.size * 32 : ship.size * 32}
+     orientation={orientation}  // This was missing!
+     className={`w-full h-full`}
+   />
+   ```
+4. **Clean image loading**: Updated ShipIcons.tsx to load correct image based on orientation:
+   ```typescript
+   const imageSrc = orientation === 'horizontal' ? '/ships/carrier-horizontal.png' : '/ships/carrier-vertical.png';
+   ```
+5. **Removed all CSS transforms**: Eliminated rotation, scaling, and rendering optimization CSS
+**Debugging Process**:
+1. Added console logs to track orientation values and image loading
+2. Discovered all ships were receiving `orientation: 'horizontal'`
+3. Identified missing `orientation` prop in Grid component
+4. Fixed prop passing and verified correct image loading
+**Result**: Ships now display crisp, properly oriented images without any blur or distortion. Horizontal ships face left-to-right, vertical ships face top-to-bottom, using pre-rotated PNG files.
