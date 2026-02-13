@@ -273,10 +273,13 @@ const Grid: React.FC<GridProps> = ({
       {/* Ship overlays - render ships as single continuous images */}
       {(() => {
         const shipsToShow = !isOpponent ? ships : ships.filter(ship => ship.isSunk);
+        console.log('Grid rendering - isOpponent:', isOpponent, 'shipsToShow:', shipsToShow.length, 'showShips:', showShips);
         return showShips && shipsToShow.map(ship => {
           const IconComponent = shipIcons[ship.type];
           const orientation = getShipOrientationFromPositions(ship.positions);
           const overlayStyle = getShipOverlayStyle(ship);
+          
+          console.log('Rendering ship:', ship.type, 'isOpponent:', isOpponent, 'isSunk:', ship.isSunk);
           
           return (
             <div key={ship.id} style={overlayStyle}>

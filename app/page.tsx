@@ -384,6 +384,7 @@ const BattleshipGame: React.FC = () => {
                     showShips={true}
                     isOpponent={false}
                     draggableShips={true}
+                    ships={gameState.player.ships}
                   />
                 </div>
               </div>
